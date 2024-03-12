@@ -51,6 +51,8 @@
 - Parametric model, such as a linear model, has a predetermined number of parameters, so its degree of freedom is limited, reducing the risk of overfitting (but increasing the risk of underfitting)
 
 
+**Note:** One of the many qualities of decision trees is that they require very little data preparation. In fact, they don’t require feature scaling or centering at all
+
 ## How decision tree algorithms work?
 
 1. **Starting at the Root**
@@ -103,38 +105,59 @@ $$G_i = 1 − \sum_{n=1}^n pi, k^2$$
   
 ## Making Predictions
 
+<div style="display: flex; justify-content: center;">
+    <img src="./images/decision_trees/decision_tree_decision_boundaries_plot.png" style="max-width: 800px">
+</div>
+
 - The thick vertical line represents the decision boundary of the root node **(depth 0): petal length = 2.45 cm**. 
   - Since the lefthand area is pure (only Iris setosa), it cannot be split any further.
 - The righthand area is impure, so
   - The **depth-1** right node splits it at petal width = 1.75 cm (represented by the dashed line). 
   - Since max_depth was set to 2, the decision tree stops right there. 
-
-
-<div style="display: flex; justify-content: center;">
-    <img src="./images/decision_trees/decision_tree_decision_boundaries_plot.png" style="max-width: 800px">
-</div>
-
+  - If you set max_depth to 3, then the two **depth-2** nodes would each add another decision boundary (represented by the two vertical dotted lines).
 
 ## Estimating Class Probabilities
 - A decision tree can also estimate the probability that an instance belongs to a particular class k. 
 - First it traverses the tree to find the leaf node for this instance, and then it returns the ratio of training instances of class k in this node. 
+  - For example, suppose you have found a flower whose petals are 5 cm long and 1.5 cm wide. 
+    - The corresponding leaf node is the depth-2 left node, so the decision tree outputs the following probabilities: 
+    - 0% for Iris setosa (0/54), 90.7% for Iris versicolor (49/54), and 9.3% for Iris virginica (5/54). 
+    - And if you ask it to predict the class, it outputs Iris versicolor (class 1) because it has the highest probability. Let’s check this:
 
+Perfect! Notice that the estimated probabilities would be identical anywhere else in the bottom-right rectangle of Figure 6-2—for example, if the petals were 6 cm long and 1.5 cm wide (even though it seems obvious that it would most likely be an Iris virginica in this case).
 
 ## The CART Training Algorithm
 
 - Scikit-Learn uses the Classification and Regression Tree (CART) algorithm to train decision trees (also called “growing” trees). 
 - The algorithm works by first splitting the training set into two subsets using a single feature k and a threshold $t_k$ (“petal length ≤ 2.45 cm”). 
 - How does it choose k and $t_k$ It searches for the pair (k, $t_k$)that produces the purest subsets, weighted by their size. 
-- Equation (gives the cost function that the algorithm tries to minimize).
-  - $$J(k, t_k) = \frac{m_{left}}{m}G_{left} + \frac{m_{right}}{m}G_{right}$$
-  - $$
+- Equation 6-2 gives the cost function that the algorithm tries to minimize.
+Equation 6-2. CART cost function for classification
+$$J(k, t_k) = \frac{m_{left}}{m}G_{left} + \frac{m_{right}}{m}G_{right}$$
+
+
+$$
 where\begin{cases}
 			G_{left/right} & \text{measures the impurity of the left/right subset}\\
             m_{left/right} & \text{is the number of instances in the left/right subset}
 		 \end{cases}
 $$
 
-- Once the CART algorithm has successfully split the training set in two, it splits the subsets using the same logic, then the sub-subsets, and so on, recursively. untill it reaches the maximum depth.
+- Once the CART algorithm has successfully split the training set in two, it splits the subsets using the same logic, then the sub-subsets, and so on, recursively. 
+- It stops recursing once it reaches the maximum depth (defined by the max_depth hyperparameter), or if it cannot find a split that will reduce impurity. 
+- A few other hyperparameters control additional stopping conditions: 
+  - min_samples_split
+  - min_samples_leaf
+  - min_weight_fraction_leaf
+  - and max_leaf_nodes
+
+
+
+- The CART algorithm is a greedy algorithm: 
+  - it greedily searches for an optimum split at the top level, then repeats the process at each subsequent level. 
+- It does not check whether or not the split will lead to the lowest possible impurity several levels down. 
+- A greedy algorithm often produces a solution that’s reasonably good but not guaranteed to be optimal. 
+- Unfortunately, finding the optimal tree is known to be an NPcomplete problem. It requires $O(exp(m))$ time, making the problem intractable even for small training sets. This is why we must settle for a “reasonably good” solution when training decision trees
 
 
 ## Gini Impurity or Entropy?
@@ -170,7 +193,9 @@ $$
     - The root node asks whether **x1 ≤ 0.197**. 
       - Since it is not, the algorithm goes to the right child node, which asks whether **x1 ≤ 0.772**. 
         - Since it is, the algorithm goes to the left child node. This is a leaf node, and it predicts **value=0.111**. 
-    - This prediction is the average target value of the 110 training instances associated with this leaf node, and it results in a mean squared error equal to 0.015 over these 110 instances.
+    - This prediction 
+      - is the average target value of the 110 training instances associated with this leaf node, 
+      - and it results in a mean squared error equal to 0.015 over these 110 instances.
 
 
 <div style="display: flex; justify-content: center;">
@@ -199,15 +224,23 @@ unnecessarily convoluted.
     <img src="./images/decision_trees/sensitivity_to_rotation_plot.png" style="max-width: 800px">
 </div>
 
-- Although both decision trees fit the training set perfectly, it is very likely that the model on the right will not generalize well 
-- One way to limit this problem is to scale the data, then apply a principal component analysis transformation.  
+- Although both decision trees fit the training set perfectly, it is very likely that the model on the right will not generalize well One way to limit this problem is to scale the data, then apply a principal component analysis transformation.  
 - but for now you only need to know that it rotates the data in a way that reduces the correlation between the features, which often (not always) makes things easier for trees.
 
+- Let’s create a small pipeline that scales the data and rotates it using PCA, then train a
+DecisionTreeClassifier on that data. Figure 6-8 shows the decision boundaries of
+that tree: as you can see, the rotation makes it possible to fit the dataset pretty well
+using only one feature, z1, which is a linear function of the original petal length and
+width. Here’s the code:
+<div style="display: flex; justify-content: center;">
+    <img src="./images/decision_trees/pca_preprocessing_plot.png" style="max-width: 800px">
+</div>
 
-### Decision Trees Have High Variance
+## Decision Trees Have High Variance
 - Main issue with decision trees is that they have quite a high variance: 
-  - small changes to the hyperparameters or to the data may produce very
-different models. 
+  - small changes to the hyperparameters or to the data may produce very different models. 
 
-- By averaging predictions over many trees, it’s possible to reduce variance significantly. 
+- By averaging predictions over many trees, it’s possible to reduce variance significantly.
 
+**Note**
+- Scikit-Learn uses the CART algorithm, which produces only binary trees, meaning trees where split nodes always have exactly two children (i.e., questions only have yes/no answers). However, other algorithms, such as ID3, can produce decision trees with nodes that have more than two children.
