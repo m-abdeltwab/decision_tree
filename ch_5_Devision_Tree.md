@@ -126,13 +126,7 @@ $$G_i = 1 − \sum_{n=1}^n pi, k^2$$
 - The algorithm works by first splitting the training set into two subsets using a single feature k and a threshold $t_k$ (“petal length ≤ 2.45 cm”). 
 - How does it choose k and $t_k$ It searches for the pair (k, $t_k$)that produces the purest subsets, weighted by their size. 
 - Equation (gives the cost function that the algorithm tries to minimize).
-  - $$J(k, t_k) = \frac{m_{left}}{m}G_{left} + \frac{m_{right}}{m}G_{right}$$
-  - $$
-where\begin{cases}
-			G_{left/right} & \text{measures the impurity of the left/right subset}\\
-            m_{left/right} & \text{is the number of instances in the left/right subset}
-		 \end{cases}
-$$
+$$J(k, t_k) = \frac{m_{left}}{m}G_{left} + \frac{m_{right}}{m}G_{right}$$
 
 - Once the CART algorithm has successfully split the training set in two, it splits the subsets using the same logic, then the sub-subsets, and so on, recursively. untill it reaches the maximum depth.
 
@@ -162,26 +156,26 @@ $$
 
 ## Regression
 
-<div style="display: flex; justify-content: center;">
-    <img src="./images/decision_trees/regression_tree.png" style="max-width: 800px">
-</div>
-
 - Suppose you want to make a prediction for a new instance with **x1 = 0.2**. 
     - The root node asks whether **x1 ≤ 0.197**. 
       - Since it is not, the algorithm goes to the right child node, which asks whether **x1 ≤ 0.772**. 
         - Since it is, the algorithm goes to the left child node. This is a leaf node, and it predicts **value=0.111**. 
     - This prediction is the average target value of the 110 training instances associated with this leaf node, and it results in a mean squared error equal to 0.015 over these 110 instances.
-
-
+  
 <div style="display: flex; justify-content: center;">
-    <img src="./images/decision_trees/tree_regression_plot.png" style="max-width: 800px">
+    <img src="./images/decision_trees/regression_tree.png" style="max-width: 800px">
 </div>
+
+---
 
 - This model’s predictions are represented on the left in Figure 6-5. 
 - If you set max_depth=3, you get the predictions represented on the right. 
 - Notice how the predicted value for each region is always the average target value of the instances in that region. 
 - The algorithm splits each region in a way that makes most training instances as close as possible to that predicted value.
-
+ 
+<div style="display: flex; justify-content: center;">
+    <img src="./images/decision_trees/tree_regression_plot.png" style="max-width: 800px">
+</div>
 
 
 
